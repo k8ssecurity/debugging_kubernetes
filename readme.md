@@ -256,7 +256,7 @@ root        51  0.0  0.0   5888  2844 pts/0    R+   19:32   0:00 ps aux
 root@my-debugger2:/#
 ```
 ### Usecase 2: Adding an ephemeral container to an existing pod
-Ephemeral containers were introduced in Kubernetes v1.23 as beta and as such available by default. Earlier versions of K8S will require you to enable feature gates [Feature Gates for Ephemeral Containers](https://xxradar.medium.com/how-to-tcpdump-using-ephemeral-containers-in-kubernetes-d066e6855785). More about this kind of containers can be found [here](https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/#understanding-ephemeral-containers), but in short, ephemeral containers differ from other containers in that they lack guarantees for resources or execution, and they will never be automatically restarted, so they are not really appropriate for building applications. Also, ephemeral containers may not have ports, so fields such as ports, livenessProbe, readinessProbe are disallowed. The good news is that ephemeral containers are useful for interactive troubleshooting when `kubectl exec` is insufficient because a container has crashed or a container image doesn't include debugging utilities. <b>*In contrast with patching or creating a copy of a pod, ephemeral containers can be added to a running pod without any restart!*</b>
+Ephemeral containers were introduced in Kubernetes v1.23 as beta and reached **GA (stable) in v1.25**, so they are enabled by default on any current cluster. Only very old clusters (pre-v1.23) require enabling the feature gate — see [Feature Gates for Ephemeral Containers](https://xxradar.medium.com/how-to-tcpdump-using-ephemeral-containers-in-kubernetes-d066e6855785). More about this kind of containers can be found [here](https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/#understanding-ephemeral-containers), but in short, ephemeral containers differ from other containers in that they lack guarantees for resources or execution, and they will never be automatically restarted, so they are not really appropriate for building applications. Also, ephemeral containers may not have ports, so fields such as ports, livenessProbe, readinessProbe are disallowed. The good news is that ephemeral containers are useful for interactive troubleshooting when `kubectl exec` is insufficient because a container has crashed or a container image doesn't include debugging utilities. <b>*In contrast with patching or creating a copy of a pod, ephemeral containers can be added to a running pod without any restart!*</b>
 
 *Note: Ephemeral containers cannot be removed from an existing pod.*<br><br>
 So let's give it a try.<br>
@@ -509,15 +509,15 @@ kubectl logs -n kube-system -l app.kubernetes.io/name=tetragon -c export-stdout 
 ```
 {"process_exec":{"process":{"exec_id":"aXAtMTAtMS0yLTY4OjE0NDcwODAwMDAwMDA6MTcxNzA=","pid":17170,"uid":0,"cwd":"/","binary":"/usr/...
 ```
-### Installing tetragon-cli
-Instead of analyzing raw log output, tetragon has an easy to use cli to ovbserve events captured by the ebpf probes.
+### Installing the tetra CLI
+Instead of analyzing raw log output, Tetragon ships an easy-to-use CLI (`tetra`) to observe events captured by the eBPF probes. Install the latest release:
 ```
-curl -L https://github.com/cilium/tetragon/releases/download/tetragon-cli/tetragon-linux-amd64.tar.gz -o tetragon-linux-amd64.tar.gz
-sudo tar -C /usr/local/bin -xzvf tetragon-linux-amd64.tar.gz
+curl -L https://github.com/cilium/tetragon/releases/latest/download/tetra-linux-amd64.tar.gz | tar -xz
+sudo mv tetra /usr/local/bin
 ```
 Let's give it a try:
 ```
-kubectl logs -n kube-system ds/tetragon -c export-stdout -f | tetragon observe
+kubectl logs -n kube-system ds/tetragon -c export-stdout -f | tetra getevents -o compact
 ```
 ```
 🚀 process default/nginx-deployment-6c8b449b8f-9s7s9 /usr/sbin/nginx
@@ -539,13 +539,13 @@ kubectl logs -n kube-system ds/tetragon -c export-stdout -f | tetragon observe
 ...
 ```
 ### Tracingpolicies
-By applying tracingpolicies, when can apply ebpf kernel probes easily. A series of examples are available in the github repo.
-For example, if want to trace which process executes which metwork connections, we can simply apply:
+By applying tracingpolicies, we can apply eBPF kernel probes easily. A series of examples are available in the github repo.
+For example, if we want to trace which process makes which network connections, we can simply apply:
 ```
-kubectl apply -f ./tetragon/crds/examples/tcp-connect.yaml
+kubectl apply -f ./tetragon/examples/tracingpolicy/tcp-connect.yaml
 ```
 ```
-kubectl logs -n kube-system ds/tetragon -c export-stdout -f | tetragon observe --namespace default 
+kubectl logs -n kube-system ds/tetragon -c export-stdout -f | tetra getevents --namespace default
 ```
 ```
 🚀 process default/test /bin/bash
