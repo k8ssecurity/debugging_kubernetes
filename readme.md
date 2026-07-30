@@ -34,7 +34,7 @@ kubectl delete po demowww
 ```
 ## Patching a pod deployment for debugging
 Sometimes it's necessary to inspect the state of an existing pod. To examine a running pod, you can use the `kubectl exec` mechanism. <br>
-This works fine to troubleshoot issues, except that secure container images do not always (and should not) contain debugging tools (ex. distroless or hardened images) and runtime security solutions might block installing them.
+This works fine to troubleshoot issues, except that secure container images do not always (and should not) contain debugging tools (ex. distroless or hardened images) and runtime security solutions might block installing them.<br>
 
 Sometimes, you might want to add a container to a pod to include more debugging tools, but this is not as simple as it sounds. When you try to update or patch a running pod to include an additional debugging container, the pod is terminated and a new one is deployed.
 
